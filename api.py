@@ -1,11 +1,12 @@
 import json
 import requests
-
+from recaptcha import CaptchaInterface
 
 class User: 
     session: requests.Session 
+    captcha_interface: CaptchaInterface
 
-    def __init__(self, session: str) -> None:
+    def __init__(self, session: str, captcha_interface: CaptchaInterface) -> None:
         self.session = requests.Session() 
         self.session.headers.update({
             'accept': 'application/json, text/javascript, */*; q=0.01',
@@ -23,7 +24,14 @@ class User:
         })
         self.session.cookies.update({
             '_project_hgc_session': session, 
+            'g-recaptcha-response-data': captcha_interface.cap(
+                websiteURL='https://2dfan.com/',
+                websiteKey='6LdUG0AgAAAAAAfSmLDXGMM7XKYMTItv87seZUan',
+                pageAction="checkin",
+                isInvisible=True,
+            ),
         })
+        self.captcha_interface = captcha_interface
 
     class CheckinResult:
         checkins_count: int 
