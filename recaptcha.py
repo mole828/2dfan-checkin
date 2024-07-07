@@ -85,7 +85,9 @@ class EzCaptchaImpl(CaptchaInterface):
             isInvisible: bool = False,
         ) -> str:
         task_id = self.__create_task(websiteURL,websiteKey,pageAction,type,isInvisible)
+        print('wait cap', end='')
         result = self.__get_task_result(task_id)
+        print('done')
         return result
 
     
