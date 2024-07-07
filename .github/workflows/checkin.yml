@@ -20,6 +20,6 @@ jobs:
     - name: Run Checkin
       env:
         SESSIONS: ${{ secrets.SESSIONS }}
-        EZCAPTCHA_CLIENT_KEY: ${{ secrets.SESSIONS }}
+        EZCAPTCHA_CLIENT_KEY: ${{ secrets.EZCAPTCHA_CLIENT_KEY }}
       run: |
         python main.py
