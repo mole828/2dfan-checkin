@@ -19,5 +19,5 @@ if __name__ == '__main__':
                 'https': http_proxy,
             })
         print('session:',session[:3], '签到结果:', user.checkin().__dict__) 
-        # user.get_authenticity_token()
+        # print(user.get_authenticity_token())
     print("finish checkin")

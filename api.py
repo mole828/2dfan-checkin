@@ -34,7 +34,7 @@ class User:
             'sec-fetch-mode': 'cors',
             'sec-fetch-site': 'same-origin',
             'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
-            # 'x-csrf-token': 'HiwMzbrAhxg0C5evBNa5lfMKvkls1LwuFzv1BPczqPTDzZ9LcdJV1TVbySDEjsoaUMyc7ltxs85uXE7K5BOVFQ',
+            'f2923d43d55e065fde8d842a4eb89ba2': 'eyJfcmFpbHMiOnsibWVzc2FnZSI6IklqSXdNalV0TURFdE1UaFVNREE2TURBNk1EQXVNREF3S3pBNE9qQXdJZz09IiwiZXhwIjoiMjAyNS0wMS0xN1QxNjowMDowMC4wMDBaIiwicHVyIjoiY29va2llLmYyOTIzZDQzZDU1ZTA2NWZkZThkODQyYTRlYjg5YmEyIn19--5a48c0c8a5ec769780e49f9a8d7c66a38f00426a',
             'x-requested-with': 'XMLHttpRequest',
         })
         self.session.cookies.update({
@@ -44,8 +44,11 @@ class User:
 
     def get_authenticity_token(self):
         resp = self.session.get(url=f"https://2dfan.com/users/{self.id}/recheckin")
+        new_cookie = resp.cookies.get_dict('2dfan.com')
+        for key in new_cookie.keys():
+            self.session.cookies.set(key, new_cookie[key])
         h5 = BeautifulSoup(resp.text, 'html.parser')
-        token: str = h5.find('meta', attrs={'name': 'csrf-token'}).attrs['content']
+        token: str = h5.find('input', attrs={'name': 'authenticity_token'}).attrs['value']
         return token
 
     class CheckinResult:
@@ -65,7 +68,11 @@ class User:
         )
 
     def checkin(self) -> CheckinResult: 
-        response = self.session.post(url= 'https://2dfan.com/checkins', data={
+        token = self.get_authenticity_token()
+        response = self.session.post(url= 'https://2dfan.com/checkins', headers={
+            'referer': f"https://2dfan.com/users/{self.id}/recheckin",
+            'x-csrf-token': token,
+        }, data={
             # 'g-recaptcha-response-data[checkin]': self.captcha_interface.cap(
             #     websiteURL='https://2dfan.com/',
             #     websiteKey='6LdUG0AgAAAAAAfSmLDXGMM7XKYMTItv87seZUan',
@@ -73,9 +80,11 @@ class User:
             #     isInvisible=True,
             # ),
             'cf-turnstile-response': self.create_cf_token(),
-            'authenticity_token': self.get_authenticity_token(),
+            'authenticity_token': token,
             'format': 'json',
             # 'g-recaptcha-response': '',
-            'button': '',
+            # 'button': '',
         }) 
+        if response.status_code != 200:
+            raise ValueError(response.text)
         return User.CheckinResult.from_json(response.text) 
