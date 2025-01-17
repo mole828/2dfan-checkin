@@ -19,10 +19,60 @@ class CaptchaInterface:
     def tft(
             self,
             websiteURL: str, 
-            websiteKey: str
+            websiteKey: str,
+            rqData: dict = {},
         ) -> str:
         raise NotImplementedError()
     
+
+class CloudFlareTurnstileTask:
+    taskId: str
+    clientKey: str
+    def __init__(self, taskId: str, clientKey: str):
+        self.clientKey = clientKey
+        self.taskId = taskId
+
+    def create(clientKey: str, websiteURL: str, websiteKey: str, rqData: dict = {}) -> 'CloudFlareTurnstileTask':
+        response = requests.post(url = "https://api.ez-captcha.com/createTask", headers={
+            'Content-Type': 'application/json'
+        }, data=json.dumps({
+            "clientKey": clientKey,
+            "task": {
+                "websiteURL": websiteURL,
+                "websiteKey": websiteKey,
+                "type": "CloudFlareTurnstileTask",
+                "rqData": rqData,
+            }
+        }))
+        data = json.loads(response.content)
+        if data['errorId']:
+            raise ValueError(data)
+        return CloudFlareTurnstileTask(
+            taskId = data['taskId'], 
+            clientKey = clientKey,
+        )
+        
+
+    def getResult(self) -> str:
+        response = requests.post(url = "https://api.ez-captcha.com/getTaskResult", headers={
+            'Content-Type': 'application/json'
+        }, data=json.dumps({
+            "clientKey": self.clientKey,
+            "taskId": self.taskId
+        }))
+        data = json.loads(response.content)
+        if data['errorId']:
+            raise ValueError(data)
+        if data['status'] == 'processing':
+            print('.', end='')
+            time.sleep(3)
+            return self.getResult()
+        elif data['status'] == 'ready': 
+            print('done')
+            return data['solution']['token']
+        else:
+            raise ValueError(data)
+
 class EzCaptchaImpl(CaptchaInterface):
     def __init__(self) -> None:
         super().__init__()
@@ -97,62 +147,17 @@ class EzCaptchaImpl(CaptchaInterface):
         print('done')
         return result
     
-    class CloudFlareTurnstileTask:
-        taskId: str
-        clientKey: str
-        def __init__(self, taskId: str, clientKey: str):
-            self.clientKey = clientKey
-            self.taskId = taskId
-
-        def create(clientKey: str, websiteURL: str, websiteKey: str):
-            response = requests.post(url = "https://api.ez-captcha.com/createTask", headers={
-                'Content-Type': 'application/json'
-            }, data=json.dumps({
-                "clientKey": clientKey,
-                "task": {
-                    "websiteURL": websiteURL,
-                    "websiteKey": websiteKey,
-                    "type": "CloudFlareTurnstileTask",
-                }
-            }))
-            data = json.loads(response.content)
-            if data['errorId']:
-                raise ValueError(data)
-            return EzCaptchaImpl.CloudFlareTurnstileTask(
-                taskId = data['taskId'], 
-                clientKey = clientKey,
-            )
-            
-
-        def getResult(self) -> str:
-            response = requests.post(url = "https://api.ez-captcha.com/getTaskResult", headers={
-                'Content-Type': 'application/json'
-            }, data=json.dumps({
-                "clientKey": self.clientKey,
-                "taskId": self.taskId
-            }))
-            data = json.loads(response.content)
-            if data['errorId']:
-                raise ValueError(data)
-            if data['status'] == 'processing':
-                print('.', end='')
-                time.sleep(3)
-                return self.getResult()
-            elif data['status'] == 'ready': 
-                print('done')
-                return data['solution']['token']
-            else:
-                raise ValueError(data)
-            
     def tft(
             self,
             websiteURL: str, 
-            websiteKey: str
+            websiteKey: str,
+            rqData: dict = {},
         ) -> str:
-        cap = EzCaptchaImpl.CloudFlareTurnstileTask.create(
+        cap = CloudFlareTurnstileTask.create(
             clientKey=self.client_key,
             websiteURL=websiteURL,
-            websiteKey=websiteKey
+            websiteKey=websiteKey,
+            rqData = rqData,
         )
         return cap.getResult()
 
@@ -162,9 +167,14 @@ class EzCaptchaImpl(CaptchaInterface):
 
 if __name__ == '__main__':
     ez = EzCaptchaImpl()
-    cap = EzCaptchaImpl.CloudFlareTurnstileTask.create(
+    cap = CloudFlareTurnstileTask.create(
         clientKey=ez.client_key,
-        websiteURL="https://www.2dfan.com/",
-        websiteKey="0x4AAAAAAAju-ZORvFgbC-Cd"
+        websiteURL="https://2dfan.com/",
+        websiteKey="0x4AAAAAAAju-ZORvFgbC-Cd",
+        rqData = {
+            'mode':'',
+            'metadataAction': 'checkin',
+            'metadataCdata': '',
+        }
     )
     print(cap.getResult())
