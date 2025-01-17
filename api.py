@@ -49,15 +49,15 @@ class User:
         self.captcha_interface = captcha_interface
 
     def get_authenticity_token(self):
-        # resp = self.session.get(url=f"https://2dfan.com/users/{self.id}/recheckin")
-        # new_cookie = resp.cookies.get_dict('2dfan.com')
-        # for key in new_cookie.keys():
-        #     self.session.cookies.set(key, new_cookie[key])
-        # h5 = BeautifulSoup(resp.text, 'html.parser')
-        # token: str = h5.find('input', attrs={'name': 'authenticity_token'}).attrs['value']
-        # return token
+        resp = self.session.get(url=f"https://2dfan.com/users/{self.id}/recheckin")
+        new_cookie = resp.cookies.get_dict('2dfan.com')
+        for key in new_cookie.keys():
+            self.session.cookies.set(key, new_cookie[key])
+        h5 = BeautifulSoup(resp.text, 'html.parser')
+        token: str = h5.find('input', attrs={'name': 'authenticity_token'}).attrs['value']
+        return token
         # return "HiwMzbrAhxg0C5evBNa5lfMKvkls1LwuFzv1BPczqPTDzZ9LcdJV1TVbySDEjsoaUMyc7ltxs85uXE7K5BOVFQ"
-        return "jr6AtXdCIKtHrwXgnGySFRcbis1b2SAs3XMGVXNvHJ-7ZLH3AUeLnYIEgL26_Th63vwfjDf9q07jp8Y4i537HA"
+        # return "jr6AtXdCIKtHrwXgnGySFRcbis1b2SAs3XMGVXNvHJ-7ZLH3AUeLnYIEgL26_Th63vwfjDf9q07jp8Y4i537HA"
 
     class CheckinResult:
         checkins_count: int 
@@ -71,7 +71,7 @@ class User:
         
     def create_cf_token(self, rqData: dict= {}) -> str:
         return self.captcha_interface.tft(
-            websiteURL=f"https://{self.host}/",
+            websiteURL=f"https://{self.host}/users/{self.id}/recheckin",
             websiteKey="0x4AAAAAAAju-ZORvFgbC-Cd",
             rqData = {
                 'mode':'',
