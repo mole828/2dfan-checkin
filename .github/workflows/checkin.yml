@@ -19,7 +19,7 @@ jobs:
         pip3 install -r requirements.txt
     - name: Run Checkin
       env:
-        SESSIONS: ${{ secrets.SESSIONS }}
+        SESSION_MAP: ${{ secrets.SESSION_MAP }}
         EZCAPTCHA_CLIENT_KEY: ${{ secrets.EZCAPTCHA_CLIENT_KEY }}
       run: |
         python main.py
